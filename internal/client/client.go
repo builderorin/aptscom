@@ -1,31 +1,21 @@
-package main
+package client
 
 import (
-	"fmt"
 	"io"
-	"log"
-	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	http "github.com/saucesteals/fhttp"
 	"github.com/saucesteals/fhttp/cookiejar"
 	"github.com/saucesteals/mimic"
 	"golang.org/x/net/publicsuffix"
 )
 
-const (
-	homeURL   = "https://www.apartments.com/"
-	targetURL = "https://www.apartments.com/off-campus-housing/ca/san-jose/san-jose-state-university/"
-	outputDir = "ldjson"
-)
+const homeURL = "https://www.apartments.com/"
 
-func main() {
+func FetchHTML(targetURL string) (string, error) {
 	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	if err != nil {
-		log.Fatalf("create cookie jar: %v", err)
+		return "", err
 	}
 
 	transport, err := mimic.NewTransport(mimic.TransportOptions{
@@ -39,7 +29,7 @@ func main() {
 		},
 	})
 	if err != nil {
-		log.Fatalf("create mimic transport: %v", err)
+		return "", err
 	}
 
 	client := &http.Client{
@@ -50,59 +40,35 @@ func main() {
 
 	primeReq, err := http.NewRequest(http.MethodGet, homeURL, nil)
 	if err != nil {
-		log.Fatalf("build homepage request: %v", err)
+		return "", err
 	}
 	setDocumentHeaders(primeReq, homeURL)
 
 	primeResp, err := client.Do(primeReq)
 	if err != nil {
-		log.Fatalf("prime apartments.com cookies: %v", err)
+		return "", err
 	}
 	_, _ = io.Copy(io.Discard, primeResp.Body)
 	primeResp.Body.Close()
 
 	pageReq, err := http.NewRequest(http.MethodGet, targetURL, nil)
 	if err != nil {
-		log.Fatalf("build target request: %v", err)
+		return "", err
 	}
 	setDocumentHeaders(pageReq, homeURL)
 
 	resp, err := client.Do(pageReq)
 	if err != nil {
-		log.Fatalf("fetch apartments.com target: %v", err)
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalf("read response: %v", err)
+		return "", err
 	}
 
-	if err := os.MkdirAll(outputDir, 0o755); err != nil {
-		log.Fatalf("create output dir: %v", err)
-	}
-
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(body)))
-	if err != nil {
-		log.Fatalf("parse html: %v", err)
-	}
-
-	count := 0
-	doc.Find(`script[type="application/ld+json"]`).Each(func(i int, sel *goquery.Selection) {
-		content := strings.TrimSpace(sel.Text())
-		if content == "" {
-			return
-		}
-
-		path := filepath.Join(outputDir, fmt.Sprintf("%d.json", count))
-		if err := os.WriteFile(path, []byte(content+"\n"), 0o644); err != nil {
-			log.Fatalf("write %s: %v", path, err)
-		}
-		fmt.Println(path)
-		count++
-	})
-
-	fmt.Printf("wrote %d ld+json files\n", count)
+	return string(body), nil
 }
 
 func setDocumentHeaders(req *http.Request, referer string) {
