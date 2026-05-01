@@ -3,13 +3,13 @@ module github.com/builderorin/aptscom
 go 1.26.2
 
 require (
+	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/saucesteals/fhttp v1.0.1
 	github.com/saucesteals/mimic v1.0.1
 	golang.org/x/net v0.52.0
 )
 
 require (
-	github.com/PuerkitoBio/goquery v1.12.0 // indirect
 	github.com/andybalholm/brotli v1.0.6 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/cloudflare/circl v1.5.0 // indirect
