@@ -13,13 +13,11 @@ type GraphDocument struct {
 }
 
 type GraphNode struct {
-	Type       string     `json:"@type"`
-	ID         string     `json:"@id,omitempty"`
-	URL        string     `json:"url,omitempty"`
-	Name       string     `json:"name,omitempty"`
-	MainEntity *ItemList  `json:"mainEntity,omitempty"`
-	About      any        `json:"about,omitempty"`
-	Raw        struct{}   `json:"-"`
+	Type       string    `json:"@type"`
+	ID         string    `json:"@id,omitempty"`
+	URL        string    `json:"url,omitempty"`
+	Name       string    `json:"name,omitempty"`
+	MainEntity *ItemList `json:"mainEntity,omitempty"`
 }
 
 type ItemList struct {
@@ -38,28 +36,62 @@ type ListItem struct {
 }
 
 type ApartmentLead struct {
-	Context            any             `json:"@context,omitempty"`
-	Type               any             `json:"@type,omitempty"`
-	ID                 string          `json:"@id,omitempty"`
-	URL                string          `json:"url,omitempty"`
-	Name               string          `json:"name,omitempty"`
-	Description        string          `json:"description,omitempty"`
-	Image              any             `json:"image,omitempty"`
-	Telephone          string          `json:"telephone,omitempty"`
-	Latitude           any             `json:"latitude,omitempty"`
-	Longitude          any             `json:"longitude,omitempty"`
-	NumberOfRooms      any             `json:"numberOfRooms,omitempty"`
-	NumberOfBathrooms  any             `json:"numberOfBathroomsTotal,omitempty"`
-	FloorSize          json.RawMessage `json:"floorSize,omitempty"`
-	Address            json.RawMessage `json:"address,omitempty"`
-	Geo                json.RawMessage `json:"geo,omitempty"`
-	PetsAllowed        any             `json:"petsAllowed,omitempty"`
-	AmenityFeature     json.RawMessage `json:"amenityFeature,omitempty"`
-	AggregateRating    json.RawMessage `json:"aggregateRating,omitempty"`
-	ContainedInPlace   json.RawMessage `json:"containedInPlace,omitempty"`
-	Offers             json.RawMessage `json:"offers,omitempty"`
-	PotentialAction    json.RawMessage `json:"potentialAction,omitempty"`
-	AdditionalProperty json.RawMessage `json:"additionalProperty,omitempty"`
+	Context         any                  `json:"@context,omitempty"`
+	Type            any                  `json:"@type,omitempty"`
+	ID              string               `json:"@id,omitempty"`
+	URL             string               `json:"url,omitempty"`
+	Name            string               `json:"name,omitempty"`
+	Description     string               `json:"description,omitempty"`
+	Image           any                  `json:"image,omitempty"`
+	Telephone       string               `json:"telephone,omitempty"`
+	Offers          *AggregateOffer      `json:"offers,omitempty"`
+	PotentialAction *Action              `json:"potentialAction,omitempty"`
+	MainEntity      *ApartmentMainEntity `json:"mainEntity,omitempty"`
+}
+
+type ApartmentMainEntity struct {
+	Type            string           `json:"@type,omitempty"`
+	ID              string           `json:"@id,omitempty"`
+	Name            string           `json:"name,omitempty"`
+	HasMap          string           `json:"hasMap,omitempty"`
+	Address         *PostalAddress   `json:"address,omitempty"`
+	Geo             *GeoCoordinates  `json:"geo,omitempty"`
+	AmenityFeatures []AmenityFeature `json:"amenityFeature,omitempty"`
+}
+
+type PostalAddress struct {
+	Type            string `json:"@type,omitempty"`
+	StreetAddress   string `json:"streetAddress,omitempty"`
+	AddressLocality string `json:"addressLocality,omitempty"`
+	AddressRegion   string `json:"addressRegion,omitempty"`
+	PostalCode      string `json:"postalCode,omitempty"`
+	AddressCountry  string `json:"addressCountry,omitempty"`
+}
+
+type GeoCoordinates struct {
+	Type      string  `json:"@type,omitempty"`
+	Latitude  float64 `json:"latitude,omitempty"`
+	Longitude float64 `json:"longitude,omitempty"`
+}
+
+type AmenityFeature struct {
+	Type  string `json:"@type,omitempty"`
+	Name  string `json:"name,omitempty"`
+	Value string `json:"value,omitempty"`
+}
+
+type AggregateOffer struct {
+	Type          string `json:"@type,omitempty"`
+	PriceCurrency string `json:"priceCurrency,omitempty"`
+	Price         *int   `json:"price,omitempty"`
+	LowPrice      *int   `json:"lowPrice,omitempty"`
+	HighPrice     *int   `json:"highPrice,omitempty"`
+	Availability  string `json:"availability,omitempty"`
+	OfferCount    int    `json:"offerCount,omitempty"`
+}
+
+type Action struct {
+	Type string `json:"@type,omitempty"`
 }
 
 func main() {
