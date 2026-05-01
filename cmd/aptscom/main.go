@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/builderorin/aptscom/internal/client"
 	"github.com/builderorin/aptscom/internal/output"
@@ -30,8 +31,15 @@ func main() {
 		log.Fatalf("parse apartment leads: %v", err)
 	}
 
-	jsonPath := base + ".json"
-	csvPath := base + ".csv"
+	jsonPath := filepath.Join("scraped", "json", base+".json")
+	csvPath := filepath.Join("scraped", "csv", base+".csv")
+
+	if err := os.MkdirAll(filepath.Dir(jsonPath), 0o755); err != nil {
+		log.Fatalf("create json output dir: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(csvPath), 0o755); err != nil {
+		log.Fatalf("create csv output dir: %v", err)
+	}
 
 	jsonBytes, err := json.MarshalIndent(leads, "", "  ")
 	if err != nil {
