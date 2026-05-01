@@ -4,19 +4,22 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"golang.org/x/net/publicsuffix"
-
-	"github.com/saucesteals/fhttp/cookiejar"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	http "github.com/saucesteals/fhttp"
+	"github.com/saucesteals/fhttp/cookiejar"
 	"github.com/saucesteals/mimic"
+	"golang.org/x/net/publicsuffix"
 )
 
 const (
 	homeURL   = "https://www.apartments.com/"
 	targetURL = "https://www.apartments.com/off-campus-housing/ca/san-jose/san-jose-state-university/"
+	outputDir = "ldjson"
 )
 
 func main() {
@@ -49,7 +52,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("build homepage request: %v", err)
 	}
-	setDocumentHeaders(primeReq, "https://www.apartments.com/")
+	setDocumentHeaders(primeReq, homeURL)
 
 	primeResp, err := client.Do(primeReq)
 	if err != nil {
@@ -57,9 +60,6 @@ func main() {
 	}
 	_, _ = io.Copy(io.Discard, primeResp.Body)
 	primeResp.Body.Close()
-
-	fmt.Printf("prime-status=%s\n", primeResp.Status)
-	fmt.Printf("cookies-after-prime=%d\n", len(jar.Cookies(primeReq.URL)))
 
 	pageReq, err := http.NewRequest(http.MethodGet, targetURL, nil)
 	if err != nil {
@@ -78,16 +78,31 @@ func main() {
 		log.Fatalf("read response: %v", err)
 	}
 
-	fmt.Printf("target-status=%s\n", resp.Status)
-	fmt.Printf("content-type=%s\n", resp.Header.Get("content-type"))
-	fmt.Printf("content-encoding=%s\n", resp.Header.Get("content-encoding"))
-	fmt.Printf("body-bytes=%d\n\n", len(body))
-
-	preview := strings.TrimSpace(string(body))
-	if len(preview) > 1500 {
-		preview = preview[:1500]
+	if err := os.MkdirAll(outputDir, 0o755); err != nil {
+		log.Fatalf("create output dir: %v", err)
 	}
-	fmt.Println(preview)
+
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(body)))
+	if err != nil {
+		log.Fatalf("parse html: %v", err)
+	}
+
+	count := 0
+	doc.Find(`script[type="application/ld+json"]`).Each(func(i int, sel *goquery.Selection) {
+		content := strings.TrimSpace(sel.Text())
+		if content == "" {
+			return
+		}
+
+		path := filepath.Join(outputDir, fmt.Sprintf("%d.json", count))
+		if err := os.WriteFile(path, []byte(content+"\n"), 0o644); err != nil {
+			log.Fatalf("write %s: %v", path, err)
+		}
+		fmt.Println(path)
+		count++
+	})
+
+	fmt.Printf("wrote %d ld+json files\n", count)
 }
 
 func setDocumentHeaders(req *http.Request, referer string) {
